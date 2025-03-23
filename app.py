@@ -53,19 +53,28 @@ def scrape_tag(tag_url):
     return all_results
 
 # Fungsi untuk membandingkan hasil dari beberapa tag
-def compare_tags(tag_urls):
+def compare_tags(tag_urls, exclude_urls):
     tag_results = [scrape_tag(tag_url) for tag_url in tag_urls]
+    exclude_results = [scrape_tag(tag_url) for tag_url in exclude_urls]
+    
     if tag_results:
         common_entries = set(tuple(entry.items()) for entry in tag_results[0])
         for results in tag_results[1:]:
             common_entries &= set(tuple(entry.items()) for entry in results)
+        
+        # Menghapus entri yang ada dalam daftar eksklusi
+        exclude_entries = set(tuple(entry.items()) for exclude in exclude_results for entry in exclude)
+        common_entries -= exclude_entries
+        
         return [dict(entry) for entry in common_entries]
     return []
 
 # Streamlit UI
 st.title("Web Scraper dan Perbandingan Tags")
 st.write("Masukkan URL tag untuk dibandingkan")
+
 num_tags = st.number_input("Berapa banyak tag URL yang ingin di-input?", min_value=1, step=1)
+num_exclude = st.number_input("Berapa banyak tag URL yang ingin dikecualikan?", min_value=0, step=1)
 
 tag_urls = []
 for i in range(num_tags):
@@ -73,8 +82,14 @@ for i in range(num_tags):
     if url:
         tag_urls.append(url)
 
+exclude_urls = []
+for i in range(num_exclude):
+    url = st.text_input(f"Masukkan URL tag yang ingin dikecualikan ke-{i+1}")
+    if url:
+        exclude_urls.append(url)
+
 if st.button("Mulai Scraping") and tag_urls:
-    common_entries = compare_tags(tag_urls)
+    common_entries = compare_tags(tag_urls, exclude_urls)
     if common_entries:
         st.subheader("Hasil Perbandingan")
         cols = st.columns(3)
@@ -84,4 +99,4 @@ if st.button("Mulai Scraping") and tag_urls:
                     st.image(entry['img'], use_container_width=True)
                 st.markdown(f"[**{entry['title']}**]({entry['link']})")
     else:
-        st.warning("Tidak ada entri yang sama ditemukan.")
+        st.warning("Tidak ada entri yang sama ditemukan atau semua hasil telah dikecualikan.")
