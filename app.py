@@ -1,11 +1,23 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
+import time
+
+# Konfigurasi sesi global
+session = requests.Session()
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Referer": "https://www.google.com/",
+    "DNT": "1",
+    "Connection": "keep-alive"
+}
+session.headers.update(headers)
 
 # Fungsi untuk scraping satu halaman berdasarkan URL tag
 def scrape_page(url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}  # Tambahkan User-Agent
-    response = requests.get(url, headers=headers)
+    time.sleep(2)  # Tambahkan delay untuk menghindari blokir
+    response = session.get(url)
     
     if response.status_code != 200:
         st.write(f"Error fetching {url}, Status Code: {response.status_code}")
@@ -32,8 +44,8 @@ def scrape_page(url):
 
 # Fungsi untuk mendeteksi jumlah halaman berdasarkan tag URL
 def detect_max_pages(tag_url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}  # Tambahkan User-Agent
-    response = requests.get(tag_url, headers=headers)
+    time.sleep(2)  # Tambahkan delay
+    response = session.get(tag_url)
     
     if response.status_code != 200:
         st.write(f"Error fetching {tag_url}, Status Code: {response.status_code}")
