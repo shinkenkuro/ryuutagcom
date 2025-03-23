@@ -14,7 +14,7 @@ USER_AGENTS = [
 
 # Konfigurasi sesi global dengan proxy opsional
 session = requests.Session()
-PROXY = None    # Ganti dengan proxy jika diperlukan, contoh: "http://username:password@proxyserver:port"
+PROXY = "http://44.215.100.135:8118"    # Ganti dengan proxy jika diperlukan, contoh: "http://username:password@proxyserver:port"
 
 def get_headers():
     return {
