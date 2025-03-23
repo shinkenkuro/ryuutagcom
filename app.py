@@ -4,7 +4,13 @@ from bs4 import BeautifulSoup
 
 # Fungsi untuk scraping satu halaman berdasarkan URL tag
 def scrape_page(url):
-    response = requests.get(url)
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}  # Tambahkan User-Agent
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code != 200:
+        st.write(f"Error fetching {url}, Status Code: {response.status_code}")
+        return []
+    
     soup = BeautifulSoup(response.content, 'html.parser')
     titles = soup.find_all('h3', class_='entry-title td-module-title')
     results = []
@@ -26,7 +32,13 @@ def scrape_page(url):
 
 # Fungsi untuk mendeteksi jumlah halaman berdasarkan tag URL
 def detect_max_pages(tag_url):
-    response = requests.get(tag_url)
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}  # Tambahkan User-Agent
+    response = requests.get(tag_url, headers=headers)
+    
+    if response.status_code != 200:
+        st.write(f"Error fetching {tag_url}, Status Code: {response.status_code}")
+        return 1
+    
     soup = BeautifulSoup(response.content, 'html.parser')
     page_nav = soup.find('div', class_='page-nav td-pb-padding-side')
     
@@ -42,6 +54,7 @@ def detect_max_pages(tag_url):
 
 # Fungsi untuk scrape beberapa halaman berdasarkan tag
 def scrape_tag(tag_url):
+    tag_url = tag_url.rstrip("/")  # Normalisasi URL
     max_pages = detect_max_pages(tag_url)
     all_results = []
     
@@ -89,7 +102,11 @@ for i in range(num_exclude):
         exclude_urls.append(url)
 
 if st.button("Mulai Scraping") and tag_urls:
+    st.write(f"Tag URLs: {tag_urls}")
+    st.write(f"Exclude URLs: {exclude_urls}")
+    
     common_entries = compare_tags(tag_urls, exclude_urls)
+    
     if common_entries:
         st.subheader("Hasil Perbandingan")
         cols = st.columns(3)
