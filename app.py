@@ -2,31 +2,54 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import time
+import random
 
-# Konfigurasi sesi global
+# List User-Agents untuk menghindari blokir
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/14.0.1 Mobile/15E148 Safari/537.36"
+]
+
+# Konfigurasi sesi global dengan proxy opsional
 session = requests.Session()
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Referer": "https://www.google.com/",
-    "DNT": "1",
-    "Connection": "keep-alive"
-}
-session.headers.update(headers)
+PROXY = "http://216.229.112.25:8080"  # Ganti dengan proxy jika diperlukan, contoh: "http://username:password@proxyserver:port"
+
+def get_headers():
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept-Language": "en-US,en;q=0.5",
+        "Referer": "https://www.google.com/",
+        "DNT": "1",
+        "Connection": "keep-alive"
+    }
+
+def fetch_url(url):
+    try:
+        time.sleep(random.uniform(2, 5))  # Delay random untuk menghindari deteksi bot
+        response = session.get(url, headers=get_headers(), proxies={"http": PROXY, "https": PROXY} if PROXY else None)
+        if response.status_code == 403:
+            st.error(f"Access Denied (403) for {url}. Coba gunakan VPN atau proxy.")
+            return None
+        elif response.status_code != 200:
+            st.error(f"Error fetching {url}, Status Code: {response.status_code}")
+            return None
+        return response.content
+    except requests.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return None
 
 # Fungsi untuk scraping satu halaman berdasarkan URL tag
 def scrape_page(url):
-    time.sleep(2)  # Tambahkan delay untuk menghindari blokir
-    response = session.get(url)
-    
-    if response.status_code != 200:
-        st.write(f"Error fetching {url}, Status Code: {response.status_code}")
+    content = fetch_url(url)
+    if not content:
         return []
     
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(content, 'html.parser')
     titles = soup.find_all('h3', class_='entry-title td-module-title')
     results = []
-
+    
     for title in titles:
         a_tag = title.find('a')
         img_tag = title.find_parent().find('img', class_='entry-thumb') if title.find_parent() else None
@@ -44,14 +67,11 @@ def scrape_page(url):
 
 # Fungsi untuk mendeteksi jumlah halaman berdasarkan tag URL
 def detect_max_pages(tag_url):
-    time.sleep(2)  # Tambahkan delay
-    response = session.get(tag_url)
-    
-    if response.status_code != 200:
-        st.write(f"Error fetching {tag_url}, Status Code: {response.status_code}")
+    content = fetch_url(tag_url)
+    if not content:
         return 1
     
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(content, 'html.parser')
     page_nav = soup.find('div', class_='page-nav td-pb-padding-side')
     
     if page_nav:
